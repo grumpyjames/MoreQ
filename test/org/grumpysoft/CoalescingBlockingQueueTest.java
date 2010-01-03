@@ -1,5 +1,6 @@
 package org.grumpysoft;
 
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.TestCase;
@@ -11,7 +12,7 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		CoalescingBlockingQueue<String, Integer> cbq =
 			new CoalescingBlockingQueue<String, Integer> (
 					underlying,
-					new SimpleStringPolicy(),
+					new NeverCoalescePolicy(),
 					new HashCodeRedirector()
 					);
 		String fool = new String("Fool");
@@ -31,7 +32,7 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		CoalescingBlockingQueue<String, Integer> cbq =
 			new CoalescingBlockingQueue<String, Integer> (
 					underlying,
-					new SimpleStringPolicy(),
+					new NeverCoalescePolicy(),
 					new HashCodeRedirector()
 					);
 		assertEquals(fool, cbq.poll());
@@ -39,16 +40,55 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(null, cbq.poll());
 	}
 	
-	private class SimpleStringPolicy implements CoalescingPolicy<String> {
+	public void testDrainToForgetsOldMessages() {
+		CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		String fool = new String("fool");
+		String diamonds = new String("diamonds");
+		String horse = new String("horse");
+		String delight = new String("delight");
+		cbq.add(horse);
+		cbq.add(diamonds);
+		cbq.add(fool);
+		cbq.add(delight);
+		ArrayList<String> drainpipe = new ArrayList<String>();
+		cbq.drainTo(drainpipe);
+		assertEquals(3, drainpipe.size()); //diamonds should coalesce with delight
+		assertEquals(horse, drainpipe.get(0));
+		assertEquals(fool, drainpipe.get(1));
+		assertEquals(delight, drainpipe.get(2));
+	}
+	
+	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
 		public boolean shouldCoalesce(String coalesceCandidate) {
 			return false;
 		}
+	}
+	
+	private class AlwaysCoalescePolicy implements CoalescingPolicy<String> {
+
+		public boolean shouldCoalesce(String coalesceCandidate) {
+			return true;
+		}
+		
 	}
 	
 	private class HashCodeRedirector implements LockSmith<String, Integer> {
 
 		public Integer makeKey(String toGenerateFrom) {
 			return new Integer(toGenerateFrom.hashCode());
+		}
+		
+	}
+	
+	private class HashCodeOfFirstLetterRedirector implements LockSmith<String, String> {
+
+		public String makeKey(String toGenerateFrom) {
+			return toGenerateFrom.substring(0,1);
 		}
 		
 	}

@@ -1,4 +1,5 @@
 package org.grumpysoft;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
@@ -34,8 +35,19 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 
 	public int drainTo(Collection<? super E> c) {
-		//FIXME this should only drain the latest Es
-		return impl_.drainTo(c);
+		Collection<E> entries = latest_.values();
+		ArrayList<E> queueContents = new ArrayList<E>();
+		impl_.drainTo(queueContents);
+		for (E element: queueContents) {
+			if (!policy_.shouldCoalesce(element)) {
+				c.add(element);
+			}
+			else {
+				if (entries.contains(element))
+						c.add(element);
+			}
+		}
+		return 0;
 	}
 
 	public int drainTo(Collection<? super E> c, int maxElements) {
