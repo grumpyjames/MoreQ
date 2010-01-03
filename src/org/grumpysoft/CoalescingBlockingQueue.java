@@ -1,4 +1,5 @@
 package org.grumpysoft;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -6,24 +7,20 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-
 public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 
 	private final BlockingQueue<E> impl_;
 	private final CoalescingPolicy<E> policy_;
 	private final LockSmith<E, KeyType> smith_;
-	private final ConcurrentHashMap<KeyType, E> latest_ = 
-		new ConcurrentHashMap<KeyType, E>();
-	
-	public CoalescingBlockingQueue (
-			final BlockingQueue<E> toWrap,
-			final CoalescingPolicy<E> decider,
-			final LockSmith<E, KeyType> jones) {
+	private final ConcurrentHashMap<KeyType, E> latest_ = new ConcurrentHashMap<KeyType, E>();
+
+	public CoalescingBlockingQueue(final BlockingQueue<E> toWrap,
+			final CoalescingPolicy<E> decider, final LockSmith<E, KeyType> jones) {
 		impl_ = toWrap;
 		policy_ = decider;
 		smith_ = jones;
 	}
-	
+
 	public boolean add(E o) {
 		if (!policy_.shouldCoalesce(o))
 			return impl_.add(o);
@@ -39,15 +36,14 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		final ArrayList<E> queueContents = new ArrayList<E>();
 		int drainCount = 0;
 		impl_.drainTo(queueContents);
-		for (final E element: queueContents) {
+		for (final E element : queueContents) {
 			if (!policy_.shouldCoalesce(element)) {
 				c.add(element);
 				++drainCount;
-			}
-			else {
+			} else {
 				if (entries.contains(element)) {
-						c.add(element);
-						++drainCount;
+					c.add(element);
+					++drainCount;
 				}
 			}
 		}
@@ -55,7 +51,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 
 	public int drainTo(Collection<? super E> c, int maxElements) {
-		//FIXME Again, only drain the latest
+		// FIXME Again, only drain the latest
 		return impl_.drainTo(c, maxElements);
 	}
 
@@ -134,7 +130,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 
 	public void clear() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public boolean contains(Object o) {
