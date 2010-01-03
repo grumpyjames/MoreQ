@@ -35,19 +35,23 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 
 	public int drainTo(Collection<? super E> c) {
-		Collection<E> entries = latest_.values();
-		ArrayList<E> queueContents = new ArrayList<E>();
+		final Collection<E> entries = latest_.values();
+		final ArrayList<E> queueContents = new ArrayList<E>();
+		int drainCount = 0;
 		impl_.drainTo(queueContents);
-		for (E element: queueContents) {
+		for (final E element: queueContents) {
 			if (!policy_.shouldCoalesce(element)) {
 				c.add(element);
+				++drainCount;
 			}
 			else {
-				if (entries.contains(element))
+				if (entries.contains(element)) {
 						c.add(element);
+						++drainCount;
+				}
 			}
 		}
-		return 0;
+		return drainCount;
 	}
 
 	public int drainTo(Collection<? super E> c, int maxElements) {
@@ -110,7 +114,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 
 	public E poll() {
-		E polled = impl_.poll();
+		final E polled = impl_.poll();
 		if (polled == null)
 			return polled;
 		if (!policy_.shouldCoalesce(polled))

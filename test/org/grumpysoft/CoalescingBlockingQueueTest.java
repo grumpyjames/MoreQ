@@ -56,8 +56,9 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		cbq.add(fool);
 		cbq.add(delight);
 		ArrayList<String> drainpipe = new ArrayList<String>();
-		cbq.drainTo(drainpipe);
+		int numberDrained = cbq.drainTo(drainpipe);
 		assertEquals(3, drainpipe.size()); //diamonds should coalesce with delight
+		assertEquals(3, numberDrained);
 		assertEquals(horse, drainpipe.get(0));
 		assertEquals(fool, drainpipe.get(1));
 		assertEquals(delight, drainpipe.get(2));
