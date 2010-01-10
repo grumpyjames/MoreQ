@@ -98,6 +98,25 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(delight, cbq.take());
 	}
 	
+	/**
+	 * 
+	 */
+	public void testPeekAndElementPassThroughUnchanged() {
+		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
+		final String fool = new String("Fool");
+		final String diamonds = new String("Diamonds");
+		underlying.add(fool);
+		underlying.add(diamonds);
+		final CoalescingBlockingQueue<String, Integer> cbq =
+			new CoalescingBlockingQueue<String, Integer> (
+					underlying,
+					new NeverCoalescePolicy(),
+					new HashCodeRedirector()
+					);
+		assertEquals(cbq.peek(), underlying.peek());
+		assertEquals(cbq.element(), underlying.element());
+	}
+	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
 		public boolean shouldCoalesce(final String coalesceCandidate) {
 			return false;

@@ -142,14 +142,18 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		}
 	}
 
+	/**
+	 * @see java.util.Queue#element() this method *does not coalesce*
+	 */
 	public E element() {
-		// TODO Auto-generated method stub
-		return null;
+		return impl_.element();
 	}
 
+	/**
+	 * @see java.util.Queue#peek() this method *does not coalesce*
+	 */
 	public E peek() {
-		// TODO Auto-generated method stub
-		return null;
+		return impl_.peek();
 	}
 
 	public E poll() {
