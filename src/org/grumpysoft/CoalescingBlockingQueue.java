@@ -7,13 +7,25 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @author james
+ *
+ * @param <E> the underlying element that will be stored in the queue
+ * @param <KeyType> the type of key that will be used to work out whether to coalesce or not
+ */
 public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
-
+	
 	private final BlockingQueue<E> impl_;
 	private final CoalescingPolicy<E> policy_;
 	private final LockSmith<E, KeyType> smith_;
 	private final ConcurrentHashMap<KeyType, E> latest_ = new ConcurrentHashMap<KeyType, E>();
 
+	/**
+	 * @param toWrap The *actual* implementation of a blocking
+	 * queue - we don't want to reinvent that particular wheel!
+	 * @param decider @see org.grumpysoft.CoalescingPolicy
+	 * @param jones Generates keys for queue objects that may coalesce
+	 */
 	public CoalescingBlockingQueue(final BlockingQueue<E> toWrap,
 			final CoalescingPolicy<E> decider, final LockSmith<E, KeyType> jones) {
 		impl_ = toWrap;
@@ -21,6 +33,9 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		smith_ = jones;
 	}
 
+	/**
+	 * @see java.util.concurrent.BlockingQueue#add(java.lang.Object)
+	 */
 	public boolean add(E o) {
 		if (!policy_.shouldCoalesce(o))
 			return impl_.add(o);
@@ -31,6 +46,11 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return false;
 	}
 
+	/**
+	 * @see java.util.concurrent.BlockingQueue#drainTo(java.util.Collection)
+	 * In this implementation only elements that *would not* coalesce are
+	 * drained. Coalescing elements are forgotten.
+	 */
 	public int drainTo(Collection<? super E> c) {
 		final Collection<E> entries = latest_.values();
 		final ArrayList<E> queueContents = new ArrayList<E>();
@@ -55,7 +75,10 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return impl_.drainTo(c, maxElements);
 	}
 
-	public boolean offer(E o) {
+	/**
+	 * @see java.util.concurrent.BlockingQueue#offer(java.lang.Object)
+	 */
+	public boolean offer(final E o) {
 		if (!policy_.shouldCoalesce(o))
 			return impl_.offer(o);
 		if (impl_.offer(o)) {
@@ -65,7 +88,10 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return false;
 	}
 
-	public boolean offer(E o, long timeout, TimeUnit unit)
+	/**
+	 * @see java.util.concurrent.BlockingQueue#offer(java.lang.Object, long, java.util.concurrent.TimeUnit)
+	 */
+	public boolean offer(final E o, final long timeout, final TimeUnit unit)
 			throws InterruptedException {
 		if (!policy_.shouldCoalesce(o))
 			return impl_.offer(o, timeout, unit);
@@ -81,7 +107,10 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return null;
 	}
 
-	public void put(E o) throws InterruptedException {
+	/**
+	 * @see java.util.concurrent.BlockingQueue#put(java.lang.Object)
+	 */
+	public void put(final E o) throws InterruptedException {
 		if (!policy_.shouldCoalesce(o)) {
 			impl_.put(o);
 			return;
@@ -90,13 +119,27 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		latest_.put(smith_.makeKey(o), o);
 	}
 
+	/**
+	 * @see java.util.concurrent.BlockingQueue#remainingCapacity()
+	 */
 	public int remainingCapacity() {
 		return impl_.remainingCapacity();
 	}
-
+	
+	/**
+	 * Will return the first element that hasn't or
+	 * cannot coalesce. 
+	 * @see java.util.concurrent.BlockingQueue#take()
+	 * for more information.
+	 */
 	public E take() throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		while (true) {
+			E next = impl_.take();
+			if (!policy_.shouldCoalesce(next))
+				return next;
+			if (next.equals(latest_.get(smith_.makeKey(next))))
+				return next;
+		}
 	}
 
 	public E element() {

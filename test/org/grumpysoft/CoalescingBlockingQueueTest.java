@@ -5,18 +5,28 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.TestCase;
 
+/**
+ * @author james
+ * This class aims to test the functionality of the queue in a single
+ * threaded environment. We assume that the existing implementations
+ * provided by the java.util.concurrency package will look after things
+ * ...up to a certain point.
+ */
 public class CoalescingBlockingQueueTest extends TestCase {
 	
+	/**
+	 * 
+	 */
 	public void testAddPassesThroughForNonCoalescer() {
-		LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
-		CoalescingBlockingQueue<String, Integer> cbq =
+		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
+		final CoalescingBlockingQueue<String, Integer> cbq =
 			new CoalescingBlockingQueue<String, Integer> (
 					underlying,
 					new NeverCoalescePolicy(),
 					new HashCodeRedirector()
 					);
-		String fool = new String("Fool");
-		String diamonds = new String("Diamonds");
+		final String fool = new String("Fool");
+		final String diamonds = new String("Diamonds");
 		cbq.add(fool);
 		cbq.add(diamonds);
 		assertEquals(fool, underlying.poll());
@@ -24,12 +34,12 @@ public class CoalescingBlockingQueueTest extends TestCase {
 	}
 	
 	public void testPollPassesThroughForNonCoalescer() {
-		LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
-		String fool = new String("Fool");
-		String diamonds = new String("Diamonds");
+		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
+		final String fool = new String("Fool");
+		final String diamonds = new String("Diamonds");
 		underlying.add(fool);
 		underlying.add(diamonds);
-		CoalescingBlockingQueue<String, Integer> cbq =
+		final CoalescingBlockingQueue<String, Integer> cbq =
 			new CoalescingBlockingQueue<String, Integer> (
 					underlying,
 					new NeverCoalescePolicy(),
@@ -41,22 +51,22 @@ public class CoalescingBlockingQueueTest extends TestCase {
 	}
 	
 	public void testDrainToForgetsOldMessages() {
-		CoalescingBlockingQueue<String, String> cbq =
+		final CoalescingBlockingQueue<String, String> cbq =
 			new CoalescingBlockingQueue<String, String> (
 					new LinkedBlockingQueue<String>(),
 					new AlwaysCoalescePolicy(),
 					new HashCodeOfFirstLetterRedirector()
 					);
-		String fool = new String("fool");
-		String diamonds = new String("diamonds");
-		String horse = new String("horse");
-		String delight = new String("delight");
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
 		cbq.add(horse);
 		cbq.add(diamonds);
 		cbq.add(fool);
 		cbq.add(delight);
-		ArrayList<String> drainpipe = new ArrayList<String>();
-		int numberDrained = cbq.drainTo(drainpipe);
+		final ArrayList<String> drainpipe = new ArrayList<String>();
+		final int numberDrained = cbq.drainTo(drainpipe);
 		assertEquals(3, drainpipe.size()); //diamonds should coalesce with delight
 		assertEquals(3, numberDrained);
 		assertEquals(horse, drainpipe.get(0));
@@ -64,15 +74,39 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(delight, drainpipe.get(2));
 	}
 	
+	/**
+	 * @throws InterruptedException
+	 * 
+	 */
+	public void testTakeCoalesces() throws InterruptedException {
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(horse);
+		cbq.add(diamonds);
+		cbq.add(fool);
+		cbq.add(delight);
+		assertEquals(horse, cbq.take());
+		assertEquals(fool, cbq.take());
+		assertEquals(delight, cbq.take());
+	}
+	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
-		public boolean shouldCoalesce(String coalesceCandidate) {
+		public boolean shouldCoalesce(final String coalesceCandidate) {
 			return false;
 		}
 	}
 	
 	private class AlwaysCoalescePolicy implements CoalescingPolicy<String> {
 
-		public boolean shouldCoalesce(String coalesceCandidate) {
+		public boolean shouldCoalesce(final String coalesceCandidate) {
 			return true;
 		}
 		
@@ -80,7 +114,7 @@ public class CoalescingBlockingQueueTest extends TestCase {
 	
 	private class HashCodeRedirector implements LockSmith<String, Integer> {
 
-		public Integer makeKey(String toGenerateFrom) {
+		public Integer makeKey(final String toGenerateFrom) {
 			return new Integer(toGenerateFrom.hashCode());
 		}
 		
@@ -88,7 +122,7 @@ public class CoalescingBlockingQueueTest extends TestCase {
 	
 	private class HashCodeOfFirstLetterRedirector implements LockSmith<String, String> {
 
-		public String makeKey(String toGenerateFrom) {
+		public String makeKey(final String toGenerateFrom) {
 			return toGenerateFrom.substring(0,1);
 		}
 		
