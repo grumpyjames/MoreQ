@@ -74,6 +74,28 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(delight, drainpipe.get(2));
 	}
 	
+	public void testPartialDrainTo() {
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(horse);
+		cbq.add(diamonds);
+		cbq.add(fool);
+		cbq.add(delight);
+		final ArrayList<String> drainpipe = new ArrayList<String>();
+		final int numberDrained = cbq.drainTo(drainpipe, 2);
+		assertEquals(2, numberDrained);
+		assertEquals(drainpipe.get(0), horse);
+		assertEquals(drainpipe.get(1), fool);
+	}
+	
 	/**
 	 * @throws InterruptedException
 	 * 

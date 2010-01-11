@@ -46,6 +46,23 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return false;
 	}
 
+	private int drainWithCoalescing(final Collection<E> from,
+			final Collection<? super E> c, final Collection<E> latest) {
+		int drainCount = 0;
+		for (final E element : from) {
+			if (!policy_.shouldCoalesce(element)) {
+				c.add(element);
+				++drainCount;
+			} else {
+				if (latest.contains(element)) {
+					c.add(element);
+					++drainCount;
+				}
+			}
+		}
+		return drainCount;
+	}
+	
 	/**
 	 * @see java.util.concurrent.BlockingQueue#drainTo(java.util.Collection)
 	 * In this implementation only elements that *would not* coalesce are
@@ -54,25 +71,24 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	public int drainTo(Collection<? super E> c) {
 		final Collection<E> entries = latest_.values();
 		final ArrayList<E> queueContents = new ArrayList<E>();
-		int drainCount = 0;
 		impl_.drainTo(queueContents);
-		for (final E element : queueContents) {
-			if (!policy_.shouldCoalesce(element)) {
-				c.add(element);
-				++drainCount;
-			} else {
-				if (entries.contains(element)) {
-					c.add(element);
-					++drainCount;
-				}
-			}
-		}
-		return drainCount;
+		return drainWithCoalescing(queueContents, c, entries);
 	}
 
+	/**
+	 * @see java.util.concurrent.BlockingQueue#drainTo(java.util.Collection, int)
+	 * This method, like the limitless drainTo, will drop any elements
+	 * that ought to coalesce.
+	 */
 	public int drainTo(Collection<? super E> c, int maxElements) {
-		// FIXME Again, only drain the latest
-		return impl_.drainTo(c, maxElements);
+		final Collection<E> entries = latest_.values();
+		ArrayList<E> queueContents = new ArrayList<E>();
+		impl_.drainTo(queueContents, maxElements);
+		int drainCount = drainWithCoalescing(queueContents, c, entries);
+		if (drainCount == maxElements || queueContents.size() < maxElements)
+			return drainCount;
+		else
+			return drainCount + drainTo(c, maxElements - c.size());
 	}
 
 	/**
