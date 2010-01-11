@@ -172,15 +172,22 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return impl_.peek();
 	}
 
+	/** 
+	 * @see java.util.Queue#poll()
+	 * This element will never return an element that would
+	 * coalesce. It will return null as a queue would, should the queue
+	 * be empty.
+	 */
 	public E poll() {
-		final E polled = impl_.poll();
-		if (polled == null)
-			return polled;
-		if (!policy_.shouldCoalesce(polled))
-			return polled;
-		if (polled.equals(latest_.get(smith_.makeKey(polled))))
-			return polled;
-		return poll();
+		while (true) {
+			final E polled = impl_.poll();
+			if (polled == null)
+				return polled;
+			if (!policy_.shouldCoalesce(polled))
+				return polled;
+			if (polled.equals(latest_.get(smith_.makeKey(polled))))
+				return polled;
+		}
 	}
 
 	public E remove() {
