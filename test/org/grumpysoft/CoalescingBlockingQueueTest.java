@@ -120,6 +120,27 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(delight, cbq.take());
 	}
 	
+	public void testPollCoalesces() throws InterruptedException {
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(horse);
+		cbq.add(diamonds);
+		cbq.add(fool);
+		cbq.add(delight);
+		assertEquals(horse, cbq.poll());
+		assertEquals(fool, cbq.poll());
+		assertEquals(delight, cbq.poll());
+		assertEquals(null, cbq.poll());
+	}
+	
 	/**
 	 * 
 	 */

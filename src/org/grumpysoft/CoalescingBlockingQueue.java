@@ -178,7 +178,9 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 			return polled;
 		if (!policy_.shouldCoalesce(polled))
 			return polled;
-		return null;
+		if (polled.equals(latest_.get(smith_.makeKey(polled))))
+			return polled;
+		return poll();
 	}
 
 	public E remove() {
