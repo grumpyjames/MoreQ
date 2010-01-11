@@ -125,15 +125,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	 */
 	public E poll(final long timeout, final TimeUnit unit) throws InterruptedException {
 		E polled = impl_.poll(timeout, unit);
-		while (true) {
-			if (polled == null)
-				return polled;
-			if (!policy_.shouldCoalesce(polled))
-				return polled;
-			if (polled.equals(latest_.get(smith_.makeKey(polled))))
-				return polled;
-			polled = impl_.poll();
-		}
+		return loop_poll(polled);
 	}
 
 	/**
@@ -184,6 +176,18 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	public E peek() {
 		return impl_.peek();
 	}
+	
+	private E loop_poll(E original) {
+		while (true) {
+			if (original == null)
+				return original;
+			if (!policy_.shouldCoalesce(original))
+				return original;
+			if (original.equals(latest_.get(smith_.makeKey(original))))
+				return original;
+			original = impl_.poll();
+		}
+	}
 
 	/** 
 	 * @see java.util.Queue#poll()
@@ -192,15 +196,8 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	 * be empty.
 	 */
 	public E poll() {
-		while (true) {
-			final E polled = impl_.poll();
-			if (polled == null)
-				return polled;
-			if (!policy_.shouldCoalesce(polled))
-				return polled;
-			if (polled.equals(latest_.get(smith_.makeKey(polled))))
-				return polled;
-		}
+		E polled = impl_.poll();
+		return loop_poll(polled);
 	}
 
 	public E remove() {
