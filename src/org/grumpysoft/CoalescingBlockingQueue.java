@@ -118,9 +118,22 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return false;
 	}
 
-	public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * @see java.util.concurrent.BlockingQueue#poll(long, java.util.concurrent.TimeUnit)
+	 * Attempts to poll for the given amount of time and returns null if no
+	 * element is available at the end of that time.
+	 */
+	public E poll(final long timeout, final TimeUnit unit) throws InterruptedException {
+		E polled = impl_.poll(timeout, unit);
+		while (true) {
+			if (polled == null)
+				return polled;
+			if (!policy_.shouldCoalesce(polled))
+				return polled;
+			if (polled.equals(latest_.get(smith_.makeKey(polled))))
+				return polled;
+			polled = impl_.poll();
+		}
 	}
 
 	/**
