@@ -3,6 +3,7 @@ package org.grumpysoft;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -200,9 +201,17 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return loop_poll(polled);
 	}
 
+	/**
+	 * Removes the first coalescable element. All other behaviour
+	 * is kept from the original Queue doco here:
+	 * @see java.util.Queue#remove()
+	 */
 	public E remove() {
-		// TODO Auto-generated method stub
-		return null;
+		final E polled = poll();
+		if (polled == null)
+			throw new NoSuchElementException();
+		else
+			return polled;
 	}
 
 	public boolean addAll(Collection<? extends E> c) {

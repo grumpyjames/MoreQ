@@ -1,6 +1,7 @@
 package org.grumpysoft;
 
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.TestCase;
@@ -33,6 +34,9 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(diamonds, underlying.poll());
 	}
 	
+	/**
+	 * 
+	 */
 	public void testPollPassesThroughForNonCoalescer() {
 		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
 		final String fool = new String("Fool");
@@ -50,6 +54,9 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(null, cbq.poll());
 	}
 	
+	/**
+	 * 
+	 */
 	public void testDrainToForgetsOldMessages() {
 		final CoalescingBlockingQueue<String, String> cbq =
 			new CoalescingBlockingQueue<String, String> (
@@ -74,6 +81,9 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(delight, drainpipe.get(2));
 	}
 	
+	/**
+	 * 
+	 */
 	public void testPartialDrainTo() {
 		final CoalescingBlockingQueue<String, String> cbq =
 			new CoalescingBlockingQueue<String, String> (
@@ -120,6 +130,9 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(delight, cbq.take());
 	}
 	
+	/**
+	 * @throws InterruptedException
+	 */
 	public void testPollCoalesces() throws InterruptedException {
 		final CoalescingBlockingQueue<String, String> cbq =
 			new CoalescingBlockingQueue<String, String> (
@@ -158,6 +171,43 @@ public class CoalescingBlockingQueueTest extends TestCase {
 					);
 		assertEquals(cbq.peek(), underlying.peek());
 		assertEquals(cbq.element(), underlying.element());
+	}
+	
+	/**
+	 * 
+	 */
+	public void testRemoveIsSane() {
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		try {
+			cbq.remove();
+			fail();
+		}
+		catch (final NoSuchElementException nse) {
+			//good!
+		}
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(horse);
+		cbq.add(diamonds);
+		cbq.add(fool);
+		cbq.add(delight);
+		assertEquals(cbq.remove(), horse);
+		assertEquals(cbq.remove(), fool);
+		assertEquals(cbq.remove(), delight);
+		try {
+			cbq.remove();
+			fail();
+		}
+		catch (final NoSuchElementException nse) {
+			//good!
+		}
 	}
 	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
