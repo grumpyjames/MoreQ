@@ -1,6 +1,7 @@
 package org.grumpysoft;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -237,6 +238,34 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertEquals(fool, cbq.take());
 		assertEquals(horse, cbq.take());
 		assertEquals(delight, cbq.take());
+	}
+	
+	/**
+	 * 
+	 */
+	public void testIterator() {
+		final CoalescingBlockingQueue<String,String> cbq =
+				new CoalescingBlockingQueue<String, String> (
+						new LinkedBlockingQueue<String>(),
+						new AlwaysCoalescePolicy(),
+						new HashCodeOfFirstLetterRedirector()
+						);
+		Iterator<String> it = cbq.iterator();
+		assertTrue(!it.hasNext());
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(fool);
+		cbq.add(diamonds);
+		cbq.add(horse);
+		cbq.add(delight);
+		it = cbq.iterator();
+		assertTrue(it.hasNext());
+		while (it.hasNext()) {
+			String el = it.next();
+			assertFalse(diamonds.equals(el));
+		}
 	}
 	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {

@@ -148,6 +148,9 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return impl_.remainingCapacity();
 	}
 	
+	private final boolean wouldCoalesce(final E el) {
+		return !el.equals(latest_.get(smith_.makeKey(el)));
+	}
 	/**
 	 * Will return the first element that hasn't or
 	 * cannot coalesce. 
@@ -159,7 +162,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 			E next = impl_.take();
 			if (!policy_.shouldCoalesce(next))
 				return next;
-			if (next.equals(latest_.get(smith_.makeKey(next))))
+			if (!wouldCoalesce(next))
 				return next;
 		}
 	}
@@ -184,7 +187,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 				return original;
 			if (!policy_.shouldCoalesce(original))
 				return original;
-			if (original.equals(latest_.get(smith_.makeKey(original))))
+			if (!wouldCoalesce(original))
 				return original;
 			original = impl_.poll();
 		}
@@ -215,7 +218,6 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 
 	/**
-	 * 
 	 * @see java.util.Collection#addAll(java.util.Collection)
 	 */
 	public boolean addAll(final Collection<? extends E> c) {
@@ -229,9 +231,11 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return collectionChanged;
 	}
 
+	/**
+	 * @see java.util.Collection#clear()
+	 */
 	public void clear() {
-		// TODO Auto-generated method stub
-
+		impl_.clear();
 	}
 
 	public boolean contains(Object o) {
@@ -249,9 +253,11 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return false;
 	}
 
+	/**
+	 * @see java.util.Collection#iterator()
+	 */
 	public Iterator<E> iterator() {
-		// TODO Auto-generated method stub
-		return null;
+		return new CoalescingIterator();
 	}
 
 	public boolean remove(Object o) {
@@ -282,6 +288,35 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	public <T> T[] toArray(T[] a) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private class CoalescingIterator implements Iterator<E> {
+
+		private final Iterator<E> it_impl_;
+		
+		public CoalescingIterator() {
+			it_impl_ = impl_.iterator();
+		}
+		
+		public boolean hasNext() {
+			return it_impl_.hasNext();
+		}
+
+		public E next() {
+			while (true) {
+				final E candidate = it_impl_.next();
+				if (!policy_.shouldCoalesce(candidate))
+					return candidate;
+				else if (!wouldCoalesce(candidate))
+					return candidate;
+			}
+		}
+
+		public void remove() {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	}
 
 }
