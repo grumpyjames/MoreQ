@@ -210,6 +210,35 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		}
 	}
 	
+	/**
+	 * @throws InterruptedException 
+	 * 
+	 */
+	public void testAddAllUpdatesLatestAndPassesThrough() throws InterruptedException {
+		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					underlying,
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		ArrayList<String> someStrings = new ArrayList<String>();
+		someStrings.add(fool);
+		someStrings.add(diamonds);
+		someStrings.add(horse);
+		someStrings.add(delight);
+		assertTrue(cbq.addAll(someStrings));
+		assertEquals(4,underlying.size());
+		assertEquals(fool, underlying.peek());
+		assertEquals(fool, cbq.take());
+		assertEquals(horse, cbq.take());
+		assertEquals(delight, cbq.take());
+	}
+	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
 		public boolean shouldCoalesce(final String coalesceCandidate) {
 			return false;

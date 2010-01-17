@@ -203,7 +203,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 
 	/**
 	 * Removes the first coalescable element. All other behaviour
-	 * is kept from the original Queue doco here:
+	 * is kept from the original Queue javadoc here:
 	 * @see java.util.Queue#remove()
 	 */
 	public E remove() {
@@ -214,9 +214,19 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 			return polled;
 	}
 
-	public boolean addAll(Collection<? extends E> c) {
-		// TODO Auto-generated method stub
-		return false;
+	/**
+	 * 
+	 * @see java.util.Collection#addAll(java.util.Collection)
+	 */
+	public boolean addAll(final Collection<? extends E> c) {
+		boolean collectionChanged = false;
+		for (final E element: c) {
+			if (add(element))
+				collectionChanged = true;
+			else
+				return collectionChanged;		
+		}
+		return collectionChanged;
 	}
 
 	public void clear() {
