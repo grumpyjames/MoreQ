@@ -263,6 +263,8 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		cbq.add(delight);
 		it = cbq.iterator();
 		assertTrue(it.hasNext());
+		assertTrue(it.hasNext());
+		assertEquals(fool, it.next());
 		while (it.hasNext()) {
 			String el = it.next();
 			assertFalse(diamonds.equals(el));

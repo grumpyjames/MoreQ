@@ -319,6 +319,8 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		 * @return true if a none coalescable element is retrievable
 		 */
 		public boolean hasNext() {
+			if (precached_ != null)
+				return true;
 			while (it_impl_.hasNext()) {
 				precached_ = it_impl_.next();
 				if (!wouldCoalesce(precached_))
@@ -329,10 +331,15 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		}
 
 		public E next() {
+			E result = null;
 			if (precached_ != null)
-				return precached_;
+				result = precached_;
 			if (hasNext())
-				return precached_;
+				result = precached_;
+			if (result != null) {
+				precached_ = null;
+				return result;
+			}
 			throw new NoSuchElementException();
 		}
 
