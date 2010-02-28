@@ -267,6 +267,12 @@ public class CoalescingBlockingQueueTest extends TestCase {
 			String el = it.next();
 			assertFalse(diamonds.equals(el));
 		}
+		try {
+			it.next();
+			fail("Should throw NoSuchElementException");
+		} catch (NoSuchElementException nse) {
+			// good!
+		}
 	}
 	
 	/**

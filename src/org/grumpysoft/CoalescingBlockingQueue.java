@@ -265,6 +265,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 
 	/**
 	 * @see java.util.Collection#iterator()
+	 * Access from one thread only!
 	 */
 	public Iterator<E> iterator() {
 		return new CoalescingIterator();
@@ -303,21 +304,34 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	private class CoalescingIterator implements Iterator<E> {
 
 		private final Iterator<E> it_impl_;
+		private E precached_;
 		
 		public CoalescingIterator() {
 			it_impl_ = impl_.iterator();
 		}
 		
+		/**
+		 * We assume this will be called in tandem with next(),
+		 * so we precache the next non coalescing element in an
+		 * attempt to match the behaviour of the two functions
+		 * @return true if a none coalescable element is retrievable
+		 */
 		public boolean hasNext() {
-			return it_impl_.hasNext();
+			while (it_impl_.hasNext()) {
+				precached_ = it_impl_.next();
+				if (!wouldCoalesce(precached_))
+					return true;
+			}
+			precached_ = null;
+			return false;
 		}
 
 		public E next() {
-			while (true) {
-				final E candidate = it_impl_.next();
-				if (!wouldCoalesce(candidate))
-					return candidate;
-			}
+			if (precached_ != null)
+				return precached_;
+			if (hasNext())
+				return precached_;
+			throw new NoSuchElementException();
 		}
 
 		public void remove() {
