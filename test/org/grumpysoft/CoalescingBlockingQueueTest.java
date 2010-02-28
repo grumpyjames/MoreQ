@@ -321,6 +321,27 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertTrue(cbq.containsAll(Arrays.asList(fool, horse, delight)));
 	}
 	
+	/**
+	 * Empty implies there are no objects in the queue
+	 * that would not coalesce.
+	 */
+	public void testIsEmptyFalseOnlyIfNonCoalescablesInQueue() {
+		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					underlying,
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String diamonds = new String("diamonds");
+		final String delight = new String("delight");
+		cbq.add(diamonds);
+		cbq.add(delight);
+		assertTrue(!cbq.isEmpty());
+		underlying.remove(delight);
+		assertTrue(cbq.isEmpty());
+	}
+	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
 		public boolean shouldCoalesce(final String coalesceCandidate) {
 			return false;

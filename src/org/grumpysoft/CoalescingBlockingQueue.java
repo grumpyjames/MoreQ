@@ -246,6 +246,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 
 	/**
+	 * @param c Collection of Es to check the queue for
 	 * @throws ClassCastException if the Collection is of something other than Es
 	 * @return true if all els are non coalescable members of the queue
 	 */
@@ -260,10 +261,8 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	 * @see java.util.Collection#isEmpty()
 	 * @return true if underlying queue is empty
 	 */
-	// FIXME: This doesn't match up with take, poll, etc.
-	// maybe iterate until we find a non coalescing el?
 	public boolean isEmpty() {
-		return impl_.isEmpty();
+		return !iterator().hasNext();
 	}
 
 	/**
