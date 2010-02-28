@@ -344,6 +344,33 @@ public class CoalescingBlockingQueueTest extends TestCase {
 		assertTrue(cbq.isEmpty());
 	}
 	
+	/**
+	 * Ronseal
+	 * @throws InterruptedException 
+	 */
+	public void testSizeCountsOnlyNonCoalescableElements() throws InterruptedException {
+		final LinkedBlockingQueue<String> underlying = new LinkedBlockingQueue<String>();
+		final CoalescingBlockingQueue<String, String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					underlying,
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(fool);
+		cbq.add(diamonds);
+		cbq.add(horse);
+		cbq.add(delight);
+		assertEquals(3, cbq.size());
+		underlying.remove(delight);
+		assertEquals(2, cbq.size());
+		cbq.take();
+		assertEquals(1, cbq.size());
+	}
+
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
 		public boolean shouldCoalesce(final String coalesceCandidate) {
 			return false;

@@ -288,9 +288,16 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		return false;
 	}
 
+	/**
+	 * @see java.util.Collection#size()
+	 * Returns the number of non coalescing elements in this queue
+	 */
 	public int size() {
-		// TODO Auto-generated method stub
-		return 0;
+		int result = 0;
+		for (@SuppressWarnings("unused") final E countWorthy: this) {
+			++result;
+		}
+		return result;
 	}
 
 	public Object[] toArray() {
