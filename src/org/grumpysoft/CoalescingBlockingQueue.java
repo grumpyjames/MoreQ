@@ -149,7 +149,8 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	}
 	
 	private final boolean wouldCoalesce(final E el) {
-		return !el.equals(latest_.get(smith_.makeKey(el)));
+		return policy_.shouldCoalesce(el)
+			&& !el.equals(latest_.get(smith_.makeKey(el)));
 	}
 	/**
 	 * Will return the first element that hasn't or
@@ -160,8 +161,6 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	public E take() throws InterruptedException {
 		while (true) {
 			E next = impl_.take();
-			if (!policy_.shouldCoalesce(next))
-				return next;
 			if (!wouldCoalesce(next))
 				return next;
 		}
@@ -184,8 +183,6 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 	private E loop_poll(E original) {
 		while (true) {
 			if (original == null)
-				return original;
-			if (!policy_.shouldCoalesce(original))
 				return original;
 			if (!wouldCoalesce(original))
 				return original;
@@ -238,19 +235,32 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		impl_.clear();
 	}
 
-	public boolean contains(Object o) {
-		// TODO Auto-generated method stub
-		return false;
+	/**
+	 * @see java.util.Collection#contains(java.lang.Object)
+	 * @throws ClassCastException if o isn't an E.
+	 * @return true if o is a non coalescable member of the queue
+	 */
+	public boolean contains(final Object o) {
+		E o2 = (E) o;
+		return impl_.contains(o2) && !wouldCoalesce(o2);
 	}
 
-	public boolean containsAll(Collection<?> c) {
-		// TODO Auto-generated method stub
-		return false;
+	/**
+	 * @throws ClassCastException if the Collection is of something other than Es
+	 * @return true if all els are non coalescable members of the queue
+	 */
+	public boolean containsAll(final Collection<?> c) {
+		for (Object e: c) {
+			if (!contains(e)) return false;
+		}
+		return true;
 	}
 
+	/**
+	 * @see java.util.Collection#isEmpty()
+	 */
 	public boolean isEmpty() {
-		// TODO Auto-generated method stub
-		return false;
+		return impl_.isEmpty();
 	}
 
 	/**
@@ -305,9 +315,7 @@ public class CoalescingBlockingQueue<E, KeyType> implements BlockingQueue<E> {
 		public E next() {
 			while (true) {
 				final E candidate = it_impl_.next();
-				if (!policy_.shouldCoalesce(candidate))
-					return candidate;
-				else if (!wouldCoalesce(candidate))
+				if (!wouldCoalesce(candidate))
 					return candidate;
 			}
 		}

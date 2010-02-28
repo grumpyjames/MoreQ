@@ -1,6 +1,7 @@
 package org.grumpysoft;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -266,6 +267,52 @@ public class CoalescingBlockingQueueTest extends TestCase {
 			String el = it.next();
 			assertFalse(diamonds.equals(el));
 		}
+	}
+	
+	/**
+	 * Contains should return true if the element is
+	 * a non coalescable element in the underlying queue
+	 */
+	public void testContainsIfElementDoesntCoalesce() {
+		final CoalescingBlockingQueue<String,String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(fool);
+		cbq.add(diamonds);
+		cbq.add(horse);
+		cbq.add(delight);
+		assertTrue(cbq.contains(delight));
+		assertTrue(cbq.contains(horse));
+		assertTrue(!cbq.contains(diamonds));
+	}
+	
+	/**
+	 * As above
+	 */
+	public void testContainsAllIfElementsDontCoalesce() {
+		final CoalescingBlockingQueue<String,String> cbq =
+			new CoalescingBlockingQueue<String, String> (
+					new LinkedBlockingQueue<String>(),
+					new AlwaysCoalescePolicy(),
+					new HashCodeOfFirstLetterRedirector()
+					);
+		final String fool = new String("fool");
+		final String diamonds = new String("diamonds");
+		final String horse = new String("horse");
+		final String delight = new String("delight");
+		cbq.add(fool);
+		cbq.add(diamonds);
+		cbq.add(horse);
+		cbq.add(delight);
+		assertTrue(!cbq.containsAll(Arrays.asList(fool, diamonds, delight)));
+		assertTrue(cbq.containsAll(Arrays.asList(fool, horse, delight)));
 	}
 	
 	private class NeverCoalescePolicy implements CoalescingPolicy<String> {
